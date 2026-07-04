@@ -1,95 +1,35 @@
-# Markdown Viewer
+# ARS Markdown Viewer
 
-A modern, feature-rich web application to read and display formatted Markdown (.md) files with a beautiful UI.
-
-## Features
-
-- 📁 **File Upload** - Click to select markdown files or drag & drop
-- 🎨 **Beautiful Styling** - Modern gradient design with smooth interactions
-- 📝 **Full Markdown Support** - Supports headings, lists, code blocks, tables, blockquotes, and more
-- 💻 **Code Highlighting** - Syntax highlighting for code blocks using Highlight.js
-- 🔗 **Responsive Design** - Works great on desktop and mobile devices
-- ⚡ **Fast Parsing** - Uses the Marked.js library for instant rendering
-- 📊 **Table Support** - Renders markdown tables beautifully
-- 🖼️ **Image Support** - Displays images embedded in markdown
-
-## Supported File Formats
-
-- `.md` - Markdown files
-- `.markdown` - Markdown files
-- `.txt` - Plain text files
-
-## How to Use
-
-1. Open `index.html` in your web browser
-2. Click the **"📂 Choose File"** button to select a markdown file
-3. Or simply **drag & drop** a markdown file onto the application window
-4. The formatted content will be displayed instantly
-
-## Features in Detail
-
-### Markdown Elements Supported
-
-- **Headings** - H1 to H6 with styled borders
-- **Paragraphs** - With proper line height and spacing
-- **Lists** - Ordered and unordered lists
-- **Code** - Inline code and code blocks with syntax highlighting
-- **Links** - Clickable links with hover effects
-- **Images** - Embedded images (relative or absolute URLs)
-- **Blockquotes** - Styled with left border
-- **Tables** - GitHub-flavored markdown tables
-- **Horizontal Rules** - Styled dividers
-- **Bold & Italic** - Text formatting
-
-### Keyboard & Accessibility
-
-- File input works with keyboard navigation
-- Keyboard shortcuts for file upload
-- Semantic HTML for better accessibility
-- Works with screen readers
-
-## Demo
-
-Try creating a test markdown file with various elements:
-
-```markdown
-# Hello World
-
-This is a **test** markdown file with *various* elements.
+A React + TypeScript app to view `.md` / `.markdown` / `.txt` files in the browser, entirely client-side.
 
 ## Features
 
-- Headings
-- Lists
-- Code blocks
+- Open one or more files via the file picker or drag-and-drop, each in its own closable tab
+- In-document search with match highlighting and next/previous navigation
+- Hand-rolled Markdown-to-HTML parser (headings, lists, tables, code blocks with basic keyword highlighting, blockquotes, links, images, bold/italic)
 
-### Code Example
+## Getting started
 
-\`\`\`javascript
-console.log('Hello, World!');
-\`\`\`
-
-| Feature | Status |
-|---------|--------|
-| Headings | ✅ |
-| Lists | ✅ |
-| Tables | ✅ |
-
-> This is a blockquote!
+```bash
+npm install
+npm run dev
 ```
 
-## Browser Compatibility
+Then open the printed local URL in a browser.
 
-- Chrome/Chromium (latest)
-- Firefox (latest)
-- Safari (latest)
-- Edge (latest)
+## Scripts
 
-## External Libraries
+- `npm run dev` — start the Vite dev server
+- `npm run build` — type-check (`tsc -b`) and produce a production build in `dist/`
+- `npm run preview` — preview the production build locally
+- `npm run lint` — run oxlint
 
-- **Marked.js** - Markdown parser
-- **Highlight.js** - Code syntax highlighting
+## Project structure
 
-## License
-
-Free to use and modify for any purpose.
+```
+src/
+  components/   Header, TabsBar, SearchBar, PreviewPane
+  hooks/        useSearch — in-document search state/highlighting
+  lib/          markdownParser (parser), highlightTextNodes (search DOM utility)
+  App.tsx       wires tabs, file open/drag-drop, and search together
+```
