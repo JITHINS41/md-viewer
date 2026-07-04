@@ -46,46 +46,27 @@
             white-space: nowrap;
         }
 
-        .controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-        }
-
-        .file-input-wrapper input[type=file] {
+        #mdFile {
             position: absolute;
             left: -9999px;
         }
 
-        .file-input-label {
+        .upload-btn {
             display: inline-block;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid white;
-            border-radius: 5px;
+            margin: 18px 0 8px;
+            padding: 12px 28px;
+            background: #1b6e3c;
+            color: white;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 1em;
+            transition: background 0.2s ease, transform 0.2s ease;
         }
 
-        .file-input-label:hover {
-            background: rgba(255, 255, 255, 0.3);
+        .upload-btn:hover {
+            background: #14532b;
             transform: translateY(-2px);
-        }
-
-        #fileName {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.95em;
-            flex: 1;
-            min-width: 200px;
-            text-align: center;
         }
 
         .content {
@@ -268,10 +249,6 @@
                 font-size: 1.2em;
             }
 
-            .controls {
-                justify-content: center;
-            }
-
             .preview-section {
                 padding: 10px;
             }
@@ -288,6 +265,87 @@
             border-radius: 5px;
             margin-bottom: 20px;
             border-left: 4px solid #c33;
+        }
+
+        .tabs-bar {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 12px 0;
+            background: #eaf7ee;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .tabs-bar.active {
+            display: flex;
+        }
+
+        .tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px 8px 14px;
+            background: #dcefe1;
+            border: 1px solid #c3e0cb;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            max-width: 220px;
+            flex-shrink: 0;
+        }
+
+        .tab.active {
+            background: white;
+            border-color: #c3e0cb;
+            box-shadow: inset 0 3px 0 #1b6e3c;
+        }
+
+        .tab-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .tab-close {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            color: #777;
+            font-size: 0.85em;
+            line-height: 1;
+        }
+
+        .tab-close:hover {
+            background: #e63950;
+            color: white;
+        }
+
+        .tab-add {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            margin: 0 0 0 4px;
+            border-radius: 6px;
+            background: #dcefe1;
+            border: 1px dashed #9cc7a8;
+            color: #1b6e3c;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .tab-add:hover {
+            background: #c3e0cb;
         }
 
         .search-bar {
@@ -356,17 +414,14 @@
     </style>
 </head>
 <body>
+    <input type="file" id="mdFile" accept=".md,.markdown,.txt" multiple />
+
     <div class="container">
         <div class="header">
             <h1>📝 ARS Markdown Viewer</h1>
-            <div class="controls">
-                <div class="file-input-wrapper">
-                    <input type="file" id="mdFile" accept=".md,.markdown,.txt" />
-                    <label for="mdFile" class="file-input-label">📂 Choose File</label>
-                </div>
-                <div id="fileName">No file selected</div>
-            </div>
         </div>
+
+        <div class="tabs-bar" id="tabsBar"></div>
 
         <div class="search-bar" id="searchBar">
             <input type="text" id="searchInput" placeholder="Search in document..." />
@@ -384,7 +439,9 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                         <p>Upload a markdown file to get started</p>
-                        <p style="font-size: 0.9em; margin-top: 10px;">Supported formats: .md, .markdown, .txt</p>
+                        <label for="mdFile" class="upload-btn">📂 Choose File</label>
+                        <p style="font-size: 0.9em;">or drag &amp; drop a file anywhere on this window</p>
+                        <p style="font-size: 0.9em;">Supported formats: .md, .markdown, .txt</p>
                     </div>
                 </div>
             </div>
@@ -603,8 +660,8 @@
 
         const parser = new MarkdownParser();
         const fileInput = document.getElementById('mdFile');
-        const fileNameDisplay = document.getElementById('fileName');
         const output = document.getElementById('output');
+        const tabsBar = document.getElementById('tabsBar');
 
         const searchBar = document.getElementById('searchBar');
         const searchInput = document.getElementById('searchInput');
@@ -613,38 +670,134 @@
         const searchNext = document.getElementById('searchNext');
         const searchClear = document.getElementById('searchClear');
 
-        let originalContentHTML = '';
+        const EMPTY_STATE_HTML = `
+            <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <p>Upload a markdown file to get started</p>
+                <label for="mdFile" class="upload-btn">📂 Choose File</label>
+                <p style="font-size: 0.9em;">or drag &amp; drop a file anywhere on this window</p>
+                <p style="font-size: 0.9em;">Supported formats: .md, .markdown, .txt</p>
+            </div>
+        `;
+
+        let tabs = [];
+        let activeTabId = null;
+        let nextTabId = 1;
+
         let searchMatches = [];
         let currentMatchIndex = -1;
 
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            fileNameDisplay.textContent = '📄 ' + file.name;
-
+        function openFile(file) {
             const reader = new FileReader();
             reader.onload = function(event) {
+                const tab = { id: nextTabId++, name: file.name, html: '' };
                 try {
                     const markdown = event.target.result;
                     const html = parser.parse(markdown);
-                    output.innerHTML = `<div class="markdown-content">${html}</div>`;
-                    originalContentHTML = output.innerHTML;
-                    searchInput.value = '';
-                    searchCount.textContent = '';
-                    searchBar.classList.add('active');
+                    tab.html = `<div class="markdown-content">${html}</div>`;
                 } catch (error) {
-                    output.innerHTML = `<div class="error">Error parsing markdown: ${error.message}</div>`;
-                    searchBar.classList.remove('active');
+                    tab.html = `<div class="error">Error parsing markdown: ${error.message}</div>`;
                 }
+                tabs.push(tab);
+                activateTab(tab.id);
             };
 
             reader.onerror = function() {
-                output.innerHTML = '<div class="error">Error reading file. Please try again.</div>';
-                searchBar.classList.remove('active');
+                const tab = { id: nextTabId++, name: file.name, html: '<div class="error">Error reading file. Please try again.</div>' };
+                tabs.push(tab);
+                activateTab(tab.id);
             };
 
             reader.readAsText(file);
+        }
+
+        function activateTab(id) {
+            const tab = tabs.find((t) => t.id === id);
+            if (!tab) return;
+
+            activeTabId = id;
+            output.innerHTML = tab.html;
+
+            searchInput.value = '';
+            searchCount.textContent = '';
+            searchMatches = [];
+            currentMatchIndex = -1;
+            searchBar.classList.add('active');
+
+            renderTabBar();
+        }
+
+        function closeTab(id) {
+            const idx = tabs.findIndex((t) => t.id === id);
+            if (idx === -1) return;
+
+            const wasActive = id === activeTabId;
+            tabs.splice(idx, 1);
+
+            if (tabs.length === 0) {
+                activeTabId = null;
+                output.innerHTML = EMPTY_STATE_HTML;
+                searchInput.value = '';
+                searchCount.textContent = '';
+                searchMatches = [];
+                currentMatchIndex = -1;
+                searchBar.classList.remove('active');
+                tabsBar.classList.remove('active');
+                renderTabBar();
+            } else if (wasActive) {
+                const newIndex = Math.min(idx, tabs.length - 1);
+                activateTab(tabs[newIndex].id);
+            } else {
+                renderTabBar();
+            }
+        }
+
+        function renderTabBar() {
+            tabsBar.innerHTML = '';
+
+            if (tabs.length === 0) {
+                tabsBar.classList.remove('active');
+                return;
+            }
+
+            tabsBar.classList.add('active');
+            tabs.forEach((tab) => {
+                const tabEl = document.createElement('div');
+                tabEl.className = 'tab' + (tab.id === activeTabId ? ' active' : '');
+                tabEl.title = tab.name;
+                tabEl.addEventListener('click', () => activateTab(tab.id));
+
+                const nameEl = document.createElement('span');
+                nameEl.className = 'tab-name';
+                nameEl.textContent = tab.name;
+
+                const closeEl = document.createElement('span');
+                closeEl.className = 'tab-close';
+                closeEl.textContent = '✕';
+                closeEl.title = 'Close tab';
+                closeEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeTab(tab.id);
+                });
+
+                tabEl.appendChild(nameEl);
+                tabEl.appendChild(closeEl);
+                tabsBar.appendChild(tabEl);
+            });
+
+            const addEl = document.createElement('label');
+            addEl.setAttribute('for', 'mdFile');
+            addEl.className = 'tab-add';
+            addEl.title = 'Open another file';
+            addEl.textContent = '+';
+            tabsBar.appendChild(addEl);
+        }
+
+        fileInput.addEventListener('change', function(e) {
+            Array.from(e.target.files).forEach(openFile);
+            fileInput.value = '';
         });
 
         function highlightTextNodes(root, query) {
@@ -705,7 +858,8 @@
         }
 
         function performSearch(query) {
-            output.innerHTML = originalContentHTML;
+            const activeTab = tabs.find((t) => t.id === activeTabId);
+            output.innerHTML = activeTab ? activeTab.html : EMPTY_STATE_HTML;
             searchMatches = [];
             currentMatchIndex = -1;
 
@@ -760,16 +914,17 @@
             e.stopPropagation();
             container.style.opacity = '1';
 
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const file = files[0];
-                if (file.type === 'text/plain' || file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
-                    fileInput.files = files;
-                    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-                } else {
-                    alert('Please drop a markdown or text file');
-                }
+            const files = Array.from(e.dataTransfer.files);
+            const validFiles = files.filter((file) =>
+                file.type === 'text/plain' || file.name.endsWith('.md') || file.name.endsWith('.markdown') || file.name.endsWith('.txt')
+            );
+
+            if (validFiles.length === 0 && files.length > 0) {
+                alert('Please drop a markdown or text file');
+                return;
             }
+
+            validFiles.forEach(openFile);
         });
     </script>
 </body>
