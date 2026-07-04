@@ -1,75 +1,71 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useMemo, useState, type RefObject } from 'react';
 import { highlightTextNodes } from '../lib/highlightTextNodes';
 
-// Highlights matches by mutating the DOM directly inside `containerRef`
-// (mirroring the original vanilla-JS approach) rather than modeling matches
-// in an AST — React only re-renders the container's innerHTML when `html`
-// itself changes, so these imperative highlights survive unrelated re-renders.
+// Builds the highlighted HTML as a plain string, using a detached (unattached
+// to the document) scratch element so the highlighting logic can reuse the
+// same DOM TreeWalker approach without touching what React actually renders.
+// React then owns the real DOM update via dangerouslySetInnerHTML as normal —
+// no imperative mutation of the live container, so nothing fights React's
+// reconciliation.
+function buildHighlightedHtml(html: string, query: string, activeIndex: number) {
+  if (!query) return { html, matchCount: 0 };
+
+  const scratch = document.createElement('div');
+  scratch.innerHTML = html;
+
+  const root = scratch.querySelector('.markdown-content') ?? scratch;
+  highlightTextNodes(root, query);
+
+  const marks = scratch.querySelectorAll('mark.search-highlight');
+  const matchCount = marks.length;
+  if (matchCount > 0) {
+    const normalized = ((activeIndex % matchCount) + matchCount) % matchCount;
+    marks[normalized].classList.add('active');
+  }
+
+  return { html: scratch.innerHTML, matchCount };
+}
+
 export function useSearch(containerRef: RefObject<HTMLDivElement | null>, html: string) {
   const [query, setQueryState] = useState('');
-  const [matchCount, setMatchCount] = useState(0);
-  const [currentIndex, setCurrentIndex] = useState(-1);
-  const matchesRef = useRef<HTMLElement[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const highlightActive = useCallback((index: number) => {
-    matchesRef.current.forEach((m) => m.classList.remove('active'));
-    const match = matchesRef.current[index];
-    if (match) {
-      match.classList.add('active');
-      match.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
-  }, []);
-
-  const runSearch = useCallback((q: string) => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    container.innerHTML = html;
-    matchesRef.current = [];
-
-    const contentEl = container.querySelector('.markdown-content');
-    if (q && contentEl) {
-      highlightTextNodes(contentEl, q);
-      matchesRef.current = Array.from(container.querySelectorAll('mark.search-highlight'));
-    }
-
-    setMatchCount(matchesRef.current.length);
-    if (matchesRef.current.length > 0) {
-      setCurrentIndex(0);
-      highlightActive(0);
-    } else {
-      setCurrentIndex(-1);
-    }
-  }, [containerRef, html, highlightActive]);
-
-  const setQuery = useCallback((q: string) => {
-    setQueryState(q);
-    runSearch(q.trim());
-  }, [runSearch]);
-
-  const goTo = useCallback((index: number) => {
-    if (matchesRef.current.length === 0) return;
-    const next = ((index % matchesRef.current.length) + matchesRef.current.length) % matchesRef.current.length;
-    setCurrentIndex(next);
-    highlightActive(next);
-  }, [highlightActive]);
-
-  // Reset search state whenever the active document's content changes
-  // (tab switch or newly opened file) — React resets the DOM itself.
+  // Reset search whenever the active document's content changes (tab switch
+  // or newly opened file).
   useEffect(() => {
     setQueryState('');
-    setMatchCount(0);
-    setCurrentIndex(-1);
-    matchesRef.current = [];
+    setActiveIndex(0);
   }, [html]);
+
+  const { html: displayHtml, matchCount } = useMemo(
+    () => buildHighlightedHtml(html, query, activeIndex),
+    [html, query, activeIndex],
+  );
+
+  const currentIndex = matchCount > 0 ? ((activeIndex % matchCount) + matchCount) % matchCount : -1;
+
+  // Scroll the active match into view once React has committed it.
+  useEffect(() => {
+    if (currentIndex === -1) return;
+    containerRef.current?.querySelector('mark.search-highlight.active')?.scrollIntoView({
+      block: 'center',
+      behavior: 'smooth',
+    });
+  }, [displayHtml, currentIndex, containerRef]);
+
+  const setQuery = (q: string) => {
+    setQueryState(q);
+    setActiveIndex(0);
+  };
 
   return {
     query,
     matchCount,
     currentIndex,
+    displayHtml,
     setQuery,
-    goNext: () => goTo(currentIndex + 1),
-    goPrev: () => goTo(currentIndex - 1),
+    goNext: () => setActiveIndex((i) => i + 1),
+    goPrev: () => setActiveIndex((i) => i - 1),
     clear: () => setQuery(''),
   };
 }

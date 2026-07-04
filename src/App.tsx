@@ -137,7 +137,7 @@ function App() {
       />
 
       <div className="content">
-        <PreviewPane ref={outputRef} html={activeTab?.html ?? null} onUploadClick={triggerFileDialog} />
+        <PreviewPane ref={outputRef} html={activeTab ? search.displayHtml : null} onUploadClick={triggerFileDialog} />
       </div>
     </div>
   );
